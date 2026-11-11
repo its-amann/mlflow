@@ -156,6 +156,13 @@ def test_digest_depends_on_column_names(source: SampleDatasetSource) -> None:
     assert dataset1.digest != dataset2.digest
 
 
+def test_digest_depends_on_column_name_boundaries(source: SampleDatasetSource) -> None:
+    dataset1 = PolarsDataset(df=pl.DataFrame({"ab": [1, 2], "c": [3, 4]}), source=source)
+
+    dataset2 = PolarsDataset(df=pl.DataFrame({"a": [1, 2], "bc": [3, 4]}), source=source)
+    assert dataset1.digest != dataset2.digest
+
+
 def test_digest_change(source: SampleDatasetSource) -> None:
     dataset1 = PolarsDataset(
         df=pl.DataFrame({"numbers": [1, 2, 3], "strs": ["a", "b", "c"]}), source=source

@@ -41,7 +41,7 @@ def hash_polars_df(df: pl.DataFrame) -> str:
             json.dumps(trimmed_df.hash_rows().to_list()).encode(),
             str(len(df)).encode(),
         ]
-        + [str(column).encode() for column in df.columns]
+        + [json.dumps(df.columns).encode()]
     )
 
 
