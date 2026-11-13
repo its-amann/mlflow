@@ -727,3 +727,10 @@ def test_standardize_scorer_value_keeps_existing_error_and_numbers():
     [feedback] = standardize_scorer_value("my_scorer", 0.0)
     assert feedback.value == 0.0
     assert feedback.error is None
+
+
+@pytest.mark.parametrize("value", [float("inf"), float("-inf"), np.float64("inf")])
+def test_standardize_scorer_value_turns_inf_into_error(value):
+    [feedback] = standardize_scorer_value("my_scorer", value)
+    assert feedback.value is None
+    assert feedback.error.error_code == "INVALID_SCORER_VALUE"
