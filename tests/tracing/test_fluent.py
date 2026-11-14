@@ -626,6 +626,33 @@ def test_trace_handle_exception_during_streaming():
     assert spans[0].events[1].name == "exception"
 
 
+@pytest.mark.asyncio
+async def test_trace_async_stream_cancellation_records_cancelled_error():
+    gate = asyncio.Event()
+
+    @mlflow.trace
+    async def blocked_stream():
+        yield 0
+        await gate.wait()
+
+    async def consume():
+        async for _ in blocked_stream():
+            pass
+
+    task = asyncio.create_task(consume())
+    await asyncio.sleep(0.05)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    trace = get_traces()[0]
+    root_span = trace.data.spans[0]
+    assert root_span.status.status_code == SpanStatusCode.ERROR
+    exception_events = [event for event in root_span.events if event.name == "exception"]
+    assert len(exception_events) == 1
+    assert exception_events[0].attributes["exception.type"] == "CancelledError"
+
+
 @pytest.mark.parametrize(
     "model",
     [
