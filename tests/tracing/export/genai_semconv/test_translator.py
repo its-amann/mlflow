@@ -423,6 +423,33 @@ def test_tool_call_response_part_uses_semconv_response_field(message_format, inp
     assert "result" not in tool_parts[0]
 
 
+def test_openai_string_inputs_mentioning_input_keep_chat_outputs():
+    outputs = {
+        "id": "chatcmpl-1",
+        "choices": [
+            {"message": {"role": "assistant", "content": "Done."}, "finish_reason": "stop"}
+        ],
+    }
+    span = _make_span(
+        attributes={
+            SpanAttributeKey.SPAN_TYPE: json.dumps("CHAT_MODEL"),
+            SpanAttributeKey.MESSAGE_FORMAT: json.dumps("openai"),
+            SpanAttributeKey.INPUTS: json.dumps("summarize this input"),
+            SpanAttributeKey.OUTPUTS: json.dumps(outputs),
+        }
+    )
+    attrs = translate_span_to_genai(span).attributes
+
+    assert json.loads(attrs[GenAiSemconvKey.OUTPUT_MESSAGES]) == [
+        {
+            "role": "assistant",
+            "parts": [{"type": "text", "content": "Done."}],
+            "finish_reason": "stop",
+        }
+    ]
+    assert attrs[GenAiSemconvKey.RESPONSE_ID] == "chatcmpl-1"
+
+
 # --- inputs and outputs are converted independently ---
 
 

@@ -171,7 +171,7 @@ def _get_converter(
 ) -> GenAiSemconvConverter | None:
     match message_format:
         case "openai":
-            if inputs is not None and "input" in inputs:
+            if isinstance(inputs, dict) and "input" in inputs:
                 from mlflow.openai.genai_semconv_converter import OpenAIResponsesConverter
 
                 return OpenAIResponsesConverter()
