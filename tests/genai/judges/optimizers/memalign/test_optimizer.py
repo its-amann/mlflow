@@ -1633,6 +1633,22 @@ def test_reconstruct_episodic_memory_reports_missing_traces(sample_judge, monkey
     )
 
 
+def test_reconstruct_episodic_memory_counts_traces_not_examples_in_warning(
+    sample_judge, monkeypatch
+):
+    monkeypatch.setenv("MLFLOW_GENAI_EVAL_MAX_WORKERS", "4")
+    judge = _deferred_judge(sample_judge, ["t0", "t1", "t2"])
+    with (
+        patch(_GET_TRACE_PATH, side_effect=lambda tid, **kwargs: None if tid == "t2" else tid),
+        patch(_TO_EXAMPLE_PATH, side_effect=lambda trace, base_judge: [f"{trace}-a", f"{trace}-b"]),
+        patch("mlflow.genai.judges.optimizers.memalign.optimizer._logger") as mock_logger,
+    ):
+        examples = judge._reconstruct_episodic_memory()
+
+    assert examples == ["t0-a", "t0-b", "t1-a", "t1-b"]
+    assert "(2/3 traces)" in mock_logger.warning.call_args.args[0]
+
+
 def test_reconstruct_episodic_memory_with_no_trace_ids(sample_judge):
     judge = _deferred_judge(sample_judge, [])
     with patch(_GET_TRACE_PATH) as mock_get_trace:
